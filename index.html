@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dinleme Analizi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root{
+    --bg: #16140f;
+    --bg-warm: #1f1c14;
+    --paper: #f2ede2;
+    --accent: #c9a962;
+    --accent-dim: #6b5c3a;
+    --line: #3a352a;
+    --text-dim: #9a927e;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  body{
+    background: var(--bg);
+    color: var(--paper);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    padding: 6vw 6vw 10vw;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before{
+    content:"";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,169,98,0.12), transparent),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 3px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap{ max-width: 760px; margin: 0 auto; position: relative; z-index: 1;}
+
+  header{
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .eyebrow{
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+  }
+
+  h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(2.2rem, 6vw, 3.6rem);
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    color: var(--paper);
+  }
+  h1 em{
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+  }
+
+  .sub{
+    margin-top: 1.2rem;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-width: 46ch;
+  }
+
+  .stage{ position: relative; }
+
+  .connect-box{
+    border: 1px solid var(--line);
+    padding: 3rem 2rem;
+    text-align: center;
+    background: rgba(255,255,255,0.015);
+  }
+
+  .connect-box p{
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  button{
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #16140f;
+    border: none;
+    padding: 1rem 2.4rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  button:hover{ background: #dbb976; transform: translateY(-1px); }
+  button:disabled{ opacity: 0.5; cursor: default; transform: none; }
+
+  .status{
+    margin-top: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    min-height: 1.2em;
+  }
+
+  .error-box{
+    border: 1px solid #8a4a3a;
+    background: rgba(138,74,58,0.08);
+    padding: 1.2rem;
+    margin-top: 1.5rem;
+    font-size: 0.78rem;
+    color: #d99a86;
+    line-height: 1.5;
+    text-align: left;
+    display: none;
+  }
+
+  /* Results */
+  .results{ display:none; }
+
+  .results-head{
+    display:flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .count-badge{
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+  .count-badge b{ color: var(--accent); font-style: normal; font-family: 'Fraunces', serif; font-size: 1rem; }
+
+  .rank-list{ list-style: none; }
+
+  .rank-item{
+    display: grid;
+    grid-template-columns: 3.2rem 1fr auto;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .rank-num{
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 1.3rem;
+    color: var(--accent-dim);
+  }
+  .rank-item:nth-child(-n+3) .rank-num{ color: var(--accent); }
+
+  .rank-name{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--paper);
+  }
+
+  .rank-bar-wrap{
+    grid-column: 1 / -1;
+    height: 3px;
+    background: var(--line);
+    margin-top: -0.6rem;
+    margin-bottom: 0.4rem;
+    position: relative;
+  }
+  .rank-bar{
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .rank-count{
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  footer{
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.7rem;
+    color: var(--accent-dim);
+    letter-spacing: 0.05em;
+    display:flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  a.reset-link{
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent-dim);
+  }
+
+  @media (max-width: 520px){
+    .rank-item{ grid-template-columns: 2.2rem 1fr; }
+    .rank-count{ grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Dinleme Arşivi · 001</div>
+    <h1>Beğendiğin<br><em>sanatçıların</em><br>dökümü.</h1>
+    <p class="sub">Spotify hesabını bağla, "Beğendiğim Şarkılar" listendeki her kaydı sayıp en çok geri döndüğün sanatçıları çıkaralım.</p>
+  </header>
+
+  <div class="stage">
+
+    <div class="connect-box" id="connectBox">
+      <p>Hesabına yalnızca okuma izniyle bağlanılır.<br>Hiçbir şey kaydedilmez, hiçbir şey paylaşılmaz.</p>
+      <button id="connectBtn">Spotify ile Bağlan</button>
+      <div class="status" id="statusText"></div>
+      <div class="error-box" id="errorBox"></div>
+    </div>
+
+    <div class="results" id="results">
+      <div class="results-head">
+        <div class="eyebrow" style="margin:0;">Sonuç</div>
+        <div class="count-badge"><b id="totalCount">0</b> beğenilen şarkı tarandı</div>
+      </div>
+      <ol class="rank-list" id="rankList"></ol>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>kişisel kullanım için</span>
+    <a href="#" class="reset-link" id="resetLink">bağlantıyı sıfırla</a>
+  </footer>
+
+</div>
+
+<script>
+  // ==== BURAYI DOLDUR ====
+  const CLIENT_ID = "cd536b91fe914f138d6bfd8971383d09";
+  // ========================
+
+  const REDIRECT_URI = window.location.origin + window.location.pathname;
+  const SCOPE = "user-library-read";
+
+  const connectBtn = document.getElementById('connectBtn');
+  const statusText = document.getElementById('statusText');
+  const errorBox = document.getElementById('errorBox');
+  const connectBox = document.getElementById('connectBox');
+  const results = document.getElementById('results');
+  const rankList = document.getElementById('rankList');
+  const totalCount = document.getElementById('totalCount');
+  const resetLink = document.getElementById('resetLink');
+
+  function showError(msg){
+    errorBox.style.display = 'block';
+    errorBox.textContent = msg;
+  }
+
+  resetLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('sp_verifier');
+    window.location.href = REDIRECT_URI;
+  });
+
+  // PKCE helpers
+  function generateRandomString(length){
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let text = '';
+    for (let i = 0; i < length; i++) text += possible.charAt(Math.floor(Math.random()*possible.length));
+    return text;
+  }
+  async function sha256(plain){
+    const encoder = new TextEncoder();
+    const data = encoder.encode(plain);
+    return window.crypto.subtle.digest('SHA-256', data);
+  }
+  function base64encode(input){
+    return btoa(String.fromCharCode(...new Uint8Array(input)))
+      .replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  }
+
+  async function redirectToSpotify(){
+    const verifier = generateRandomString(64);
+    localStorage.setItem('sp_verifier', verifier);
+    const hashed = await sha256(verifier);
+    const challenge = base64encode(hashed);
+
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: CLIENT_ID,
+      scope: SCOPE,
+      code_challenge_method: 'S256',
+      code_challenge: challenge,
+      redirect_uri: REDIRECT_URI,
+    });
+    window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  }
+
+  async function getToken(code){
+    const verifier = localStorage.getItem('sp_verifier');
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: REDIRECT_URI,
+      code_verifier: verifier,
+    });
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+    });
+    if (!res.ok) throw new Error('Token alınamadı (' + res.status + ')');
+    return res.json();
+  }
+
+  async function fetchAllLikedTracks(token, onProgress){
+    let items = [];
+    let url = 'https://api.spotify.com/v1/me/tracks?limit=50';
+    while (url){
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Şarkılar çekilemedi (' + res.status + ')');
+      const data = await res.json();
+      items = items.concat(data.items);
+      onProgress(items.length);
+      url = data.next;
+    }
+    return items;
+  }
+
+  function renderResults(items){
+    const counts = {};
+    items.forEach(item => {
+      const track = item.track;
+      if (!track || !track.artists || !track.artists.length) return;
+      const name = track.artists[0].name;
+      counts[name] = (counts[name] || 0) + 1;
+    });
+
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 25);
+    const max = sorted.length ? sorted[0][1] : 1;
+
+    totalCount.textContent = items.length;
+    rankList.innerHTML = '';
+
+    sorted.forEach(([name, count], i) => {
+      const li = document.createElement('li');
+      li.className = 'rank-item';
+      li.innerHTML = `
+        <span class="rank-num">${String(i+1).padStart(2,'0')}</span>
+        <span class="rank-name">${name}</span>
+        <span class="rank-count">${count} şarkı</span>
+        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${(count/max*100)}%"></div></div>
+      `;
+      rankList.appendChild(li);
+    });
+
+    connectBox.style.display = 'none';
+    results.style.display = 'block';
+  }
+
+  async function handleCallback(code){
+    try{
+      statusText.textContent = 'Giriş doğrulanıyor...';
+      connectBtn.disabled = true;
+      const tokenData = await getToken(code);
+
+      statusText.textContent = 'Beğenilen şarkılar çekiliyor... (0)';
+      const items = await fetchAllLikedTracks(tokenData.access_token, (n) => {
+        statusText.textContent = `Beğenilen şarkılar çekiliyor... (${n})`;
+      });
+
+      statusText.textContent = 'Analiz hazırlanıyor...';
+      renderResults(items);
+
+      window.history.replaceState({}, document.title, REDIRECT_URI);
+    }catch(err){
+      showError('Bir sorun oluştu: ' + err.message + '. Sayfayı yenileyip tekrar dener misin?');
+      connectBtn.disabled = false;
+      statusText.textContent = '';
+    }
+  }
+
+  connectBtn.addEventListener('click', redirectToSpotify);
+
+  // Sayfa yüklendiğinde: callback mi geldik yoksa bekliyor muyuz kontrol et
+  (function init(){
+    if (!CLIENT_ID || CLIENT_ID.indexOf("BURAYA") === 0){
+      showError("CLIENT_ID henuz ayarlanmamis.");
+      connectBtn.disabled = true;
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const error = params.get('error');
+    if (error){
+      showError('Spotify izin vermedi: ' + error);
+      return;
+    }
+    if (code){
+      handleCallback(code);
+    }
+  })();
+</script>
+</body>
+</html>
